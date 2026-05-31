@@ -13,21 +13,21 @@
     "test:deposit-admin": "node server/test/deposit-admin-integration.test.mjs"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.0",
-    "react-icons": "^5.3.0",
+    "bcryptjs": "^2.4.3",
+    "concurrently": "^9.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
     "framer-motion": "^11.3.0",
+    "jsonwebtoken": "^9.0.2",
     "lightweight-charts": "^4.2.0",
     "lucide-react": "^0.441.0",
-    "express": "^4.21.0",
-    "cors": "^2.8.5",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "dotenv": "^16.4.5",
-    "ws": "^8.18.0",
-    "uuid": "^10.0.0",
-    "concurrently": "^9.0.1"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-icons": "^5.3.0",
+    "react-router-dom": "^6.26.0",
+    "uuid": "^11.0.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
@@ -36,6 +36,6 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.10",
-    "vite": "^5.4.2"
+    "vite": "^8.0.14"
   }
 }
