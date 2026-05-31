@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 
 dotenv.config();
@@ -92,8 +92,110 @@ app.post('/api/auth/login', (req, res) => {
   });
 });
 
+// OTP Endpoints
+const otpStore = new Map(); // Store OTPs in memory (use Redis in production)
+
+app.post('/api/auth/send-otp', (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // Store OTP with 10-minute expiry
+  otpStore.set(email, {
+    otp,
+    expiresAt: Date.now() + 10 * 60 * 1000,
+    attempts: 0
+  });
+
+  console.log(`📧 OTP sent to ${email}: ${otp}`);
+  
+  // In production, send via email service (SendGrid, AWS SES, etc.)
+  // await emailService.sendOTP(email, otp);
+
+  res.json({
+    success: true,
+    message: 'OTP sent successfully',
+    email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'), // Mask email for security
+    expiresIn: 600 // 10 minutes in seconds
+  });
+});
+
+app.post('/api/auth/verify-otp', (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({ error: 'Email and OTP are required' });
+  }
+
+  const storedOTP = otpStore.get(email);
+
+  if (!storedOTP) {
+    return res.status(400).json({ error: 'OTP not found or expired. Request a new OTP.' });
+  }
+
+  // Check expiry
+  if (Date.now() > storedOTP.expiresAt) {
+    otpStore.delete(email);
+    return res.status(400).json({ error: 'OTP has expired. Request a new one.' });
+  }
+
+  // Check attempts (max 5)
+  if (storedOTP.attempts >= 5) {
+    otpStore.delete(email);
+    return res.status(400).json({ error: 'Too many attempts. Request a new OTP.' });
+  }
+
+  // Verify OTP
+  if (storedOTP.otp !== otp) {
+    storedOTP.attempts++;
+    return res.status(400).json({ 
+      error: 'Invalid OTP',
+      attemptsRemaining: 5 - storedOTP.attempts 
+    });
+  }
+
+  // OTP verified successfully
+  otpStore.delete(email);
+
+  console.log(`✅ OTP verified for ${email}`);
+
+  res.json({
+    success: true,
+    message: 'Email verified successfully',
+    verified: true
+  });
+});
+
+// Email Validation
+app.post('/api/auth/validate-email', (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isValid = emailRegex.test(email);
+
+  res.json({
+    valid: isValid,
+    message: isValid ? 'Email format is valid' : 'Invalid email format'
+  });
+});
+
 // WebSocket setup
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws) => {
   console.log('New WebSocket connection');
